@@ -9,6 +9,8 @@ from tkinter import ttk, messagebox, scrolledtext
 import os
 from datetime import datetime
 
+from PIL import Image, ImageTk
+
 from team import Team
 from match import Match
 from utils import (
@@ -212,9 +214,17 @@ class FootballManagerGUI:
         
         # Club badge canvas
 
-        self.badge_canvas = tk.Canvas(action_frame, width=180, height=220, bg='#E6F2FF', highlightthickness=0)
-        self.badge_canvas.pack(pady=5)
-        self._draw_badge()
+        try:
+            img = Image.open("club_logo.png")  # 你的图片名
+            img = img.resize((130, 130), Image.LANCZOS)  # 调整大小，让它合适
+            self.club_logo_img = ImageTk.PhotoImage(img)  # 必须存成属性，否则会被Python回收
+
+            logo_label = tk.Label(action_frame, image=self.club_logo_img, bg='#E6F2FF')
+            logo_label.pack(pady=5)
+
+        except Exception as e:
+            logo_label = tk.Label(action_frame, text="[No Logo]", bg='#E6F2FF')
+            logo_label.pack(pady=5)
     
     def create_log_panel(self):
         """Create bottom log panel"""
