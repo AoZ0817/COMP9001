@@ -36,9 +36,10 @@ class FootballManagerGUI:
         """
         self.root = root
         self.root.title("⚽ Football Manager Simulator")
-        self.root.geometry("1000x700")
-        self.root.resizable(False, False)
-        
+        self.root.geometry("1600x960")
+        self.root.resizable(True, True)
+        self.root.minsize(1100, 720)
+
         # Game data
         self.team = None
         self.available_players = generate_transfer_market()
@@ -62,7 +63,7 @@ class FootballManagerGUI:
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=2)
         self.main_frame.grid_columnconfigure(2, weight=1)
-        self.main_frame.grid_columnconfigure(2, minsize=210)
+        self.main_frame.grid_columnconfigure(2, minsize=160)
         self.main_frame.grid_rowconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(0, minsize=250)
         
@@ -210,7 +211,8 @@ class FootballManagerGUI:
         ttk.Separator(action_frame, orient='horizontal').pack(fill='x', pady=10)
         
         # Club badge canvas
-        self.badge_canvas = tk.Canvas(action_frame, width=150, height=150, bg='lightblue')
+
+        self.badge_canvas = tk.Canvas(action_frame, width=180, height=220, bg='#E6F2FF', highlightthickness=0)
         self.badge_canvas.pack(pady=5)
         self._draw_badge()
     
@@ -222,21 +224,101 @@ class FootballManagerGUI:
         self.log_text = scrolledtext.ScrolledText(
             log_frame,
             height=8,
-            font=('Courier', 9)
+            font=('Courier', 11)
         )
         self.log_text.pack(fill='both', expand=True)
+        self.log_text.tag_configure("log_spacing", spacing1=2, spacing3=6)
         
         self.log("Welcome to Football Manager Simulator! Click 'New Game' to start.")
-    
+
     def _draw_badge(self):
-        """Draw club badge on canvas"""
+        """Draw a club crest with a football and dynamic club name."""
         c = self.badge_canvas
         c.delete('all')
-        # Draw football
-        c.create_oval(25, 25, 125, 125, fill='white', outline='black', width=3)
-        c.create_polygon(75, 40, 85, 60, 75, 80, 65, 60, fill='black')
-        c.create_polygon(85, 60, 95, 75, 85, 90, 75, 80, fill='black')
-    
+
+        # 读取俱乐部名字（未创建时给占位）
+        club_name = self.team.name if getattr(self, "team", None) else "My Club"
+        club_name = club_name.strip() or "My Club"
+
+        W, H = int(c['width']), int(c['height'])
+
+        # ---------- 盾牌外形 ----------
+        # 外轮廓（深色边）
+        shield_outer = [
+            (W * 0.5, H * 0.05),  # 顶点
+            (W * 0.90, H * 0.22),
+            (W * 0.85, H * 0.65),
+            (W * 0.50, H * 0.95),
+            (W * 0.15, H * 0.65),
+            (W * 0.10, H * 0.22),
+        ]
+        # 内层（浅色填充）
+        shield_inner = [(x, y + 2) for (x, y) in shield_outer]  # 稍微下移防止描边重合
+
+        def poly(points, **kw):
+            flat = [v for xy in points for v in xy]
+            return c.create_polygon(flat, **kw)
+
+        poly(shield_outer, fill='#1E3A8A', outline='#0B1F4B', width=3, smooth=True)
+        poly(shield_inner, fill='#3B82F6', outline='', smooth=True)
+
+        # ---------- 足球图案（居中偏上） ----------
+        cx, cy, r = W * 0.50, H * 0.38, min(W, H) * 0.20
+        c.create_oval(cx - r, cy - r, cx + r, cy + r, fill='white', outline='black', width=3)
+
+        # 中心五边形
+        pent = [
+            (cx, cy - r * 0.55),
+            (cx + r * 0.43, cy - r * 0.18),
+            (cx + r * 0.27, cy + r * 0.50),
+            (cx - r * 0.27, cy + r * 0.50),
+            (cx - r * 0.43, cy - r * 0.18),
+        ]
+        poly(pent, fill='black', outline='black')
+
+        # 邻接白色多边形（简单蜂窝效果）
+        patches = [
+            [(cx, cy - r * 0.55), (cx + r * 0.35, cy - r * 0.55), (cx + r * 0.60, cy - r * 0.10),
+             (cx + r * 0.43, cy - r * 0.18)],
+            [(cx + r * 0.43, cy - r * 0.18), (cx + r * 0.60, cy - r * 0.10), (cx + r * 0.45, cy + r * 0.55),
+             (cx + r * 0.27, cy + r * 0.50)],
+            [(cx - r * 0.27, cy + r * 0.50), (cx + r * 0.27, cy + r * 0.50), (cx, cy + r * 0.80),
+             (cx - r * 0.00, cy + r * 0.80)],
+            [(cx - r * 0.43, cy - r * 0.18), (cx - r * 0.60, cy - r * 0.10), (cx - r * 0.45, cy + r * 0.55),
+             (cx - r * 0.27, cy + r * 0.50)],
+            [(cx, cy - r * 0.55), (cx - r * 0.35, cy - r * 0.55), (cx - r * 0.60, cy - r * 0.10),
+             (cx - r * 0.43, cy - r * 0.18)],
+        ]
+        for p in patches:
+            poly(p, fill='white', outline='black', width=2)
+
+        # ---------- 丝带（放名字） ----------
+        band_top = H * 0.62
+        c.create_rectangle(W * 0.16, band_top, W * 0.84, band_top + 26, fill='#F8FAFF', outline='#0B1F4B', width=2)
+        c.create_arc(W * 0.12, band_top - 4, W * 0.30, band_top + 28, start=90, extent=180, style='pieslice',
+                     fill='#F8FAFF', outline='#0B1F4B', width=2)
+        c.create_arc(W * 0.70, band_top - 4, W * 0.88, band_top + 28, start=-90, extent=180, style='pieslice',
+                     fill='#F8FAFF', outline='#0B1F4B', width=2)
+
+        # ---------- 队名文字（根据长度自适应缩放） ----------
+        text_size = self._fit_font_for_badge(club_name, max_size=16, min_size=9, max_width=W * 0.60)
+        c.create_text(W * 0.50, band_top + 13, text=club_name.upper(), font=('Helvetica', text_size, 'bold'),
+                      fill='#0B1F4B')
+
+    def _fit_font_for_badge(self, text, max_size=16, min_size=9, max_width=110):
+        """Return a font size that makes 'text' fit within max_width on the badge."""
+
+        # 简单按字符数估算宽度（Tk不直接量字符串宽度，这里用经验系数）
+        # 你也可以改成用 tkinter.font.Font 测量精确宽度
+        def width_estimate(size):
+            # 粗略估计：英文大写约等宽，每个字符 ~0.6*size 像素
+            return len(text) * (0.60 * size)
+
+        size = max_size
+        while size > min_size and width_estimate(size) > max_width:
+            size -= 1
+        return max(size, min_size)
+
     # ==================== Game Logic Methods ====================
     
     def new_game(self):
@@ -566,7 +648,7 @@ class FootballManagerGUI:
     def log(self, message):
         """Add message to log"""
         timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_text.insert('1.0', f"[{timestamp}] {message}\n")
+        self.log_text.insert('1.0', f"[{timestamp}] {message}\n", "log_spacing")
         self.log_text.see('1.0')
 
 
