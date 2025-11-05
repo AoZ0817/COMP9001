@@ -77,14 +77,7 @@ class Player:
         """
         self.stamina = max(0, self.stamina - 25)
         self.matches_played += 1
-        
-        # Forwards have higher chance to score
-        if self.position == "FWD" and random.random() > 0.7:
-            self.goals += 1
-        
-        # Midfielders have chance to assist
-        if self.position == "MID" and random.random() > 0.8:
-            self.assists += 1
+
     
     def get_match_rating(self):
         """
