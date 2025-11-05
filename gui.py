@@ -62,8 +62,9 @@ class FootballManagerGUI:
         self.main_frame.grid_columnconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(1, weight=2)
         self.main_frame.grid_columnconfigure(2, weight=1)
-        self.main_frame.grid_columnconfigure(2, minsize=220)
+        self.main_frame.grid_columnconfigure(2, minsize=210)
         self.main_frame.grid_rowconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(0, minsize=250)
         
         # Three main panels
         self.create_team_panel()
